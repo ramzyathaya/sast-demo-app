@@ -1,26 +1,42 @@
 pipeline {
     agent any
+    environment {
+        // Make sure pip installed path is accessible to Jenkins
+        PATH = "/Users/ramzy/Library/Python/3.9/bin:${env.PATH}"
+    }
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                // Clone the repository from GitHub
-                git url: 'https://github.com/ramzyathaya/sast-demo-app.git', branch: 'main'
+                checkout scm
             }
         }
         stage('Install Dependencies') {
             steps {
-                // Install Bandit, a Python static code analysis tool
-                sh 'pip3 install bandit'
+                script {
+                    // Ensure pip3 is available and use it to install Bandit
+                    sh 'python3 -m pip install --user bandit'
+                }
             }
         }
         stage('SAST Analysis') {
             steps {
-                // Run Bandit and save the output in XML format
-                sh 'bandit -f xml -o bandit-output.xml -r . || true'
-                
-                // Record SAST issues using Jenkins' Warnings Next Generation Plugin
-                recordIssues tools: [bandit(pattern: 'bandit-output.xml')]
+                script {
+                    // Run Bandit for Static Analysis
+                    sh 'bandit -f xml -o bandit-output.xml -r .'
+                }
             }
+        }
+        stage('Archive Results') {
+            steps {
+                // Archiving the bandit output report for later review
+                archiveArtifacts artifacts: 'bandit-output.xml', allowEmptyArchive: true
+            }
+        }
+    }
+    post {
+        always {
+            // Clean up any files after the build
+            cleanWs()
         }
     }
 }
