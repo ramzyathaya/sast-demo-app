@@ -10,7 +10,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 // Install Bandit, a Python static code analysis tool
-                sh 'pip install bandit'
+                sh 'pip3 install bandit'
             }
         }
         stage('SAST Analysis') {
